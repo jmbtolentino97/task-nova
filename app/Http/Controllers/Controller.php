@@ -11,9 +11,7 @@ use Illuminate\Routing\Controller as BaseController;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Database\Eloquent\Model;
 use Symfony\Component\HttpFoundation\Response;
-use App\Http\Resources\BaseCollection;
 use ErrorException;
-use Illuminate\Support\Arr;
 use Spatie\QueryBuilder\QueryBuilder;
 use Spatie\QueryBuilder\AllowedFilter;
 use Spatie\QueryBuilder\AllowedInclude;
@@ -38,26 +36,24 @@ abstract class Controller extends BaseController
         $result = $this->getModelInstance();
         $result->fill($data)->save();
         return response(
-            $this->toCollection(
-                $this
-                    ->getModelQueryBuilder(
-                        $this->getModelInstance()
-                            ->where($result->getKeyName(), $result->toArray()[$result->getKeyName()]))
-                    ->get()
-            )->first(),
+            $this
+                ->getModelQueryBuilder(
+                    $this->getModelInstance()
+                        ->where($result->getKeyName(), $result->toArray()[$result->getKeyName()]))
+                ->first(),
             Response::HTTP_CREATED);
     }
 
     public function show(Request $request, $id)
     {
         $model = $this->getModelInstance();
-        return $this->toCollection(
+        return response(
             $this
                 ->getModelQueryBuilder(
                     $model
                         ->where($model->getKeyName(), $id))
-                ->get()
-        )->first();
+                ->first(),
+            Response::HTTP_OK);
     }
 
     /**
@@ -73,13 +69,13 @@ abstract class Controller extends BaseController
             $model->where($primaryKey, $id)
         )->get()[0];
         $result->fill($data)->save();
-        return $this->toCollection(
+        return response(
             $this
                 ->getModelQueryBuilder(
                     $this->getModelInstance()
                         ->where($primaryKey, $result->getKey()))
-                ->get()
-        )->first();
+                ->first(),
+            Response::HTTP_OK);
     }
 
     public function destroy(Request $request, $id)
@@ -144,11 +140,6 @@ abstract class Controller extends BaseController
             empty($model->getFillable())
                 ? array_diff(Schema::getColumnListing($model->getTable()), $model->getGuarded())
                 : $model->getFillable();
-    }
-
-    protected function toCollection($resource)
-    {
-        return $resource;
     }
 
     abstract protected function getModelInstance() : Model;
